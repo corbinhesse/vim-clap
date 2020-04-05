@@ -132,6 +132,7 @@ fn try_notify_top_results(
     top_results_len: usize,
     top_results: &[usize; ITEMS_TO_SHOW],
     buffer: &[FuzzyMatchedLineInfo],
+    add_icon: impl Fn(&str) -> String,
 ) -> std::result::Result<Instant, ()> {
     if total % 16 == 0 {
         let now = Instant::now();
@@ -142,7 +143,7 @@ fn try_notify_top_results(
                 let (text, _, idxs) = std::ops::Index::index(buffer, idx);
                 indices.push(idxs);
                 let text = if enable_icon {
-                    prepend_icon(&text)
+                    add_icon(&text)
                 } else {
                     text.clone()
                 };
@@ -177,6 +178,7 @@ fn try_notify_top_results(
 fn dyn_collect_all(
     mut iter: impl Iterator<Item = FuzzyMatchedLineInfo>,
     enable_icon: bool,
+    add_icon: impl Fn(&str) -> String + Copy,
 ) -> Vec<FuzzyMatchedLineInfo> {
     let mut buffer = Vec::with_capacity({
         let (low, high) = iter.size_hint();
@@ -207,6 +209,7 @@ fn dyn_collect_all(
             top_results.len(),
             &top_results,
             &buffer,
+            add_icon,
         ) {
             past = now;
         }
@@ -230,6 +233,7 @@ fn dyn_collect_number(
     mut iter: impl Iterator<Item = FuzzyMatchedLineInfo>,
     enable_icon: bool,
     number: usize,
+    add_icon: impl Fn(&str) -> String + Copy,
 ) -> (usize, Vec<FuzzyMatchedLineInfo>) {
     // To not have problems with queues after sorting and truncating the buffer,
     // buffer has the lowest bound of `ITEMS_TO_SHOW * 2`, not `number * 2`.
@@ -259,6 +263,7 @@ fn dyn_collect_number(
             top_results.len(),
             &top_results,
             &buffer,
+            add_icon,
         ) {
             past = now;
         }
@@ -279,6 +284,48 @@ fn dyn_collect_number(
     (total, buffer)
 }
 
+// macros for `dyn_collect_number` and `dyn_collect_number`
+//
+// Generate an filtered iterator from Source::Stdin.
+macro_rules! source_iter_stdin {
+    ( $scorer:ident ) => {
+        io::stdin().lock().lines().filter_map(|lines_iter| {
+            lines_iter
+                .ok()
+                .and_then(|line| $scorer(&line).map(|(score, indices)| (line, score, indices)))
+        })
+    };
+}
+
+// Generate an filtered iterator from Source::Exec(exec).
+macro_rules! source_iter_exec {
+    ( $scorer:ident, $exec:ident ) => {
+        std::io::BufReader::new($exec.stream_stdout()?)
+            .lines()
+            .filter_map(|lines_iter| {
+                lines_iter
+                    .ok()
+                    .and_then(|line| $scorer(&line).map(|(score, indices)| (line, score, indices)))
+            })
+    };
+}
+
+// Generate an filtered iterator from Source::File(fpath).
+macro_rules! source_iter_file {
+    ( $scorer:ident, $fpath:ident ) => {
+        std::fs::read_to_string($fpath)?
+            .lines()
+            .filter_map(|line| $scorer(&line).map(|(score, indices)| (line.into(), score, indices)))
+    };
+}
+
+// Generate an filtered iterator from Source::List(list).
+macro_rules! source_iter_list {
+    ( $scorer:ident, $list:ident ) => {
+        $list.filter_map(|line| $scorer(&line).map(|(score, indices)| (line, score, indices)))
+    };
+}
+
 /// Returns the ranked results after applying fuzzy filter given the query string and a list of candidates.
 pub fn dyn_fuzzy_filter_and_rank<I: Iterator<Item = String>>(
     query: &str,
@@ -296,41 +343,30 @@ pub fn dyn_fuzzy_filter_and_rank<I: Iterator<Item = String>>(
             .map(|(score, indices)| (score as i64, indices)),
     };
 
+    let add_icon = prepend_icon;
+
     if let Some(number) = number {
         let (total, filtered) = match source {
-            Source::Stdin => dyn_collect_number(
-                io::stdin().lock().lines().filter_map(|lines_iter| {
-                    lines_iter.ok().and_then(|line| {
-                        scorer(&line).map(|(score, indices)| (line, score, indices))
-                    })
-                }),
-                enable_icon,
-                number,
-            ),
+            Source::Stdin => {
+                dyn_collect_number(source_iter_stdin!(scorer), enable_icon, number, add_icon)
+            }
             Source::Exec(exec) => dyn_collect_number(
-                std::io::BufReader::new(exec.stream_stdout()?)
-                    .lines()
-                    .filter_map(|lines_iter| {
-                        lines_iter.ok().and_then(|line| {
-                            scorer(&line).map(|(score, indices)| (line, score, indices))
-                        })
-                    }),
+                source_iter_exec!(scorer, exec),
                 enable_icon,
                 number,
+                add_icon,
             ),
             Source::File(fpath) => dyn_collect_number(
-                std::fs::read_to_string(fpath)?.lines().filter_map(|line| {
-                    scorer(&line).map(|(score, indices)| (line.into(), score, indices))
-                }),
+                source_iter_file!(scorer, fpath),
                 enable_icon,
                 number,
+                add_icon,
             ),
             Source::List(list) => dyn_collect_number(
-                list.filter_map(|line| {
-                    scorer(&line).map(|(score, indices)| (line, score, indices))
-                }),
+                source_iter_list!(scorer, list),
                 enable_icon,
                 number,
+                add_icon,
             ),
         };
         let (lines, indices, truncated_map) = process_top_items(
@@ -347,36 +383,16 @@ pub fn dyn_fuzzy_filter_and_rank<I: Iterator<Item = String>>(
         }
     } else {
         let mut filtered = match source {
-            Source::Stdin => dyn_collect_all(
-                io::stdin().lock().lines().filter_map(|lines_iter| {
-                    lines_iter.ok().and_then(|line| {
-                        scorer(&line).map(|(score, indices)| (line, score, indices))
-                    })
-                }),
-                enable_icon,
-            ),
-            Source::Exec(exec) => dyn_collect_all(
-                std::io::BufReader::new(exec.stream_stdout()?)
-                    .lines()
-                    .filter_map(|lines_iter| {
-                        lines_iter.ok().and_then(|line| {
-                            scorer(&line).map(|(score, indices)| (line, score, indices))
-                        })
-                    }),
-                enable_icon,
-            ),
-            Source::File(fpath) => dyn_collect_all(
-                std::fs::read_to_string(fpath)?.lines().filter_map(|line| {
-                    scorer(line).map(|(score, indices)| (line.into(), score, indices))
-                }),
-                enable_icon,
-            ),
-            Source::List(list) => dyn_collect_all(
-                list.filter_map(|line| {
-                    scorer(&line).map(|(score, indices)| (line, score, indices))
-                }),
-                enable_icon,
-            ),
+            Source::Stdin => dyn_collect_all(source_iter_stdin!(scorer), enable_icon, add_icon),
+            Source::Exec(exec) => {
+                dyn_collect_all(source_iter_exec!(scorer, exec), enable_icon, add_icon)
+            }
+            Source::File(fpath) => {
+                dyn_collect_all(source_iter_file!(scorer, fpath), enable_icon, add_icon)
+            }
+            Source::List(list) => {
+                dyn_collect_all(source_iter_list!(scorer, list), enable_icon, add_icon)
+            }
         };
 
         filtered.par_sort_unstable_by(|(_, v1, _), (_, v2, _)| v2.partial_cmp(&v1).unwrap());
