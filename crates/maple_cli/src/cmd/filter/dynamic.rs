@@ -380,6 +380,7 @@ pub fn dyn_fuzzy_filter_and_rank<I: Iterator<Item = String>>(
             filtered.into_iter().take(number),
             winwidth.unwrap_or(62),
             enable_icon,
+            add_icon,
         );
 
         if truncated_map.is_empty() {

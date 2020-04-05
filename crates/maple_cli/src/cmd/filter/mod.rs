@@ -16,13 +16,14 @@ fn process_top_items<T>(
     top_list: impl IntoIterator<Item = (String, T, Vec<usize>)>,
     winwidth: usize,
     enable_icon: bool,
+    add_icon: impl Fn(&str) -> String,
 ) -> (Vec<String>, Vec<Vec<usize>>, HashMap<String, String>) {
     let (truncated_lines, truncated_map) = truncate_long_matched_lines(top_list, winwidth, None);
     let mut lines = Vec::with_capacity(top_size);
     let mut indices = Vec::with_capacity(top_size);
     if enable_icon {
         for (text, _, idxs) in truncated_lines {
-            lines.push(prepend_icon(&text));
+            lines.push(add_icon(&text));
             indices.push(idxs);
         }
     } else {
@@ -51,6 +52,7 @@ pub fn run<I: Iterator<Item = String>>(
             ranked.into_iter().take(number),
             winwidth.unwrap_or(62),
             enable_icon,
+            prepend_icon,
         );
         if truncated_map.is_empty() {
             println_json!(total, lines, indices);
