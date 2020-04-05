@@ -138,7 +138,7 @@ function! s:spawn(query) abort
   if clap#maple#is_available()
     let [grep_opts, query] = s:translate_query_and_opts(a:query)
     " Add ' .' for windows in maple
-    call clap#maple#run_grep(s:grep_executable.' '.grep_opts, query, s:grep_enable_icon, s:ripgrep_glob)
+    call clap#maple#run_sync_grep(s:grep_executable.' '.grep_opts, query, s:grep_enable_icon, s:ripgrep_glob)
     if s:grep_enable_icon
       let s:icon_appended = v:true
     endif
@@ -203,6 +203,7 @@ function! s:grep_on_move() abort
     return
   endif
 
+  let s:preview_cache = get(s:, 'preview_cache', {})
   if !has_key(s:preview_cache, fpath)
     let s:preview_cache[fpath] = {
           \ 'lines': readfile(expand(fpath), ''),

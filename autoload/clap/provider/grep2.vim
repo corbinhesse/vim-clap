@@ -6,9 +6,20 @@ set cpoptions&vim
 
 let s:grep2 = {}
 
-function! s:grep2.source() abort
-  call clap#rooter#try_set_cwd()
-  return "rg --column --line-number --no-heading --color=never --smart-case ''"
+function! s:grep2.on_typed()
+  if exists('g:__clap_forerunner_tempfile')
+    unsilent echom '[impl]'.g:__clap_forerunner_tempfile
+    call clap#filter#async#dyn#from_tempfile(g:__clap_forerunner_tempfile)
+    return
+  endif
+  call clap#filter#async#dyn#start_grep()
+endfunction
+
+function! s:grep2.init() abort
+  if clap#maple#is_available()
+    call clap#rooter#try_set_cwd()
+    call clap#forerunner#start_subcommand(clap#maple#ripgrep_forerunner_subcommand())
+  endif
 endfunction
 
 let s:grep2.sink = g:clap#provider#grep#.sink

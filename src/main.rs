@@ -64,6 +64,7 @@ fn run(maple: Maple) -> Result<()> {
                     maple.number,
                     maple.enable_icon,
                     maple.winwidth,
+                    false,
                 )?;
             }
         }
@@ -91,20 +92,30 @@ fn run(maple: Maple) -> Result<()> {
             grep_query,
             glob,
             cmd_dir,
+            sync,
         } => {
             let g = match &glob {
                 Some(s) => Some(s.as_str()),
                 None => None,
             };
 
-            maple_cli::cmd::grep::run(
-                grep_cmd,
-                &grep_query,
-                g,
-                cmd_dir,
-                maple.number,
-                maple.enable_icon,
-            )?;
+            if sync {
+                maple_cli::cmd::grep::run(
+                    grep_cmd,
+                    &grep_query,
+                    g,
+                    cmd_dir,
+                    maple.number,
+                    maple.enable_icon,
+                )?;
+            } else {
+                maple_cli::cmd::grep::dyn_grep(
+                    &grep_query,
+                    cmd_dir,
+                    maple.number,
+                    maple.enable_icon,
+                )?;
+            }
         }
         Cmd::Helptags { meta_info } => maple_cli::cmd::helptags::run(meta_info)?,
         Cmd::RipgrepForerunner { cmd_dir } => {

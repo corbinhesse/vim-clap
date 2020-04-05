@@ -2,6 +2,7 @@ use super::*;
 use extracted_fzy::match_and_score_with_positions;
 use fuzzy_filter::FuzzyMatchedLineInfo;
 use fuzzy_matcher::skim::fuzzy_indices;
+use icon::prepend_grep_icon;
 use rayon::slice::ParallelSliceMut;
 use std::io::{self, BufRead};
 use std::time::{Duration, Instant};
@@ -334,6 +335,7 @@ pub fn dyn_fuzzy_filter_and_rank<I: Iterator<Item = String>>(
     number: Option<usize>,
     enable_icon: bool,
     winwidth: Option<usize>,
+    grep_icon: bool,
 ) -> Result<()> {
     let algo = algo.unwrap_or(Algo::Fzy);
 
@@ -343,7 +345,11 @@ pub fn dyn_fuzzy_filter_and_rank<I: Iterator<Item = String>>(
             .map(|(score, indices)| (score as i64, indices)),
     };
 
-    let add_icon = prepend_icon;
+    let add_icon = if grep_icon {
+        prepend_grep_icon
+    } else {
+        prepend_icon
+    };
 
     if let Some(number) = number {
         let (total, filtered) = match source {

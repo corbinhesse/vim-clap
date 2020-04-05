@@ -54,6 +54,22 @@ fn is_git_repo(dir: &Path) -> bool {
     gitdir.exists()
 }
 
+pub fn dyn_grep(
+    grep_query: &str,
+    cmd_dir: Option<PathBuf>,
+    number: Option<usize>,
+    enable_icon: bool,
+) -> Result<()> {
+    let rg_cmd = "rg --column --line-number --no-heading --color=never --smart-case ''";
+    let cmd = if let Some(dir) = cmd_dir {
+        fuzzy_filter::subprocess::Exec::shell(rg_cmd).cwd(dir)
+    } else {
+        fuzzy_filter::subprocess::Exec::shell(rg_cmd)
+    };
+    let source: fuzzy_filter::Source<std::iter::Empty<_>> = cmd.into();
+    crate::cmd::filter::dyn_run(grep_query, source, None, number, enable_icon, None, true)
+}
+
 pub fn run_forerunner(
     cmd_dir: Option<PathBuf>,
     number: Option<usize>,

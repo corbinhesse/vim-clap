@@ -23,6 +23,19 @@ function! clap#filter#async#dyn#start(cmd) abort
   call clap#job#stdio#start_dyn_filter_service(function('s:handle_message'), a:cmd)
 endfunction
 
+function! clap#filter#async#dyn#start_grep() abort
+  let s:last_query = g:clap.input.get()
+  let grep_cmd = printf('%s --number 100 --winwidth %d grep "" "%s" --cmd-dir "%s"',
+        \ g:clap_enable_icon ? '--enable-icon' : '',
+        \ winwidth(g:clap.display.winid),
+        \ g:clap.input.get(),
+        \ clap#rooter#working_dir(),
+        \ )
+  let maple_cmd = clap#maple#build_cmd(grep_cmd)
+  echom "maple_cmd:".maple_cmd
+  call clap#job#stdio#start_service(function('s:handle_message'), maple_cmd)
+endfunction
+
 function! clap#filter#async#dyn#from_tempfile(tempfile) abort
   let s:last_query = g:clap.input.get()
   if g:clap_enable_icon && index(['files', 'git_files'], g:clap.provider.id) > -1
