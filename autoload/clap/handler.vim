@@ -22,7 +22,13 @@ function! clap#handler#relaunch_is_ok() abort
   return v:false
 endfunction
 
+let s:is_nvim = has('nvim')
+
 function! clap#handler#on_typed() abort
+  if s:is_nvim && !clap#api#win_is_visible()
+    return
+  endif
+
   if clap#handler#relaunch_is_ok()
     return
   endif

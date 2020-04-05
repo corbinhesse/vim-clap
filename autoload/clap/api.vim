@@ -61,6 +61,11 @@ if s:is_nvim
       return nvim_win_is_valid(self.winid)
     endif
   endfunction
+
+  function! clap#api#win_is_visible() abort
+    let g:clap.context = get(g:clap, 'context', {})
+    return get(g:clap.context, 'visible', v:false)
+  endfunction
 else
   function! s:_get_lines() dict abort
     let lines = getbufline(self.bufnr, 0, '$')

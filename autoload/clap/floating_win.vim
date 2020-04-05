@@ -334,6 +334,8 @@ function! clap#floating_win#open() abort
   call s:open_indicator_win()
   call s:open_win_border_right()
 
+  let g:clap.context.visible = v:false
+
   " This seemingly does not look good.
   " call s:adjust_display_for_border_symbol()
 
@@ -352,6 +354,8 @@ function! clap#floating_win#open() abort
   silent doautocmd <nomodeline> User ClapOnEnter
 
   startinsert
+
+  let g:clap.context.visible = v:true
 
   call g:clap.provider.apply_query()
 endfunction

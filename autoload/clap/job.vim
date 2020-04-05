@@ -19,9 +19,15 @@ if has('nvim')
     return job_id
   endfunction
 else
+  let s:job_id_map = {}
+
   function! clap#job#stop(job_id) abort
+    if !has_key(s:job_id_map, a:job_id)
+      return
+    endif
+    let job = remove(s:job_id_map, a:job_id)
     " Kill it!
-    silent! call jobstop(a:job_id, 'kill')
+    call job_stop(job, 'kill')
   endfunction
 
   function! clap#job#vim8_job_id_of(channel) abort
@@ -49,7 +55,13 @@ else
           \ 'noblock': 1,
           \ 'mode': 'raw',
           \ })
-    return ch_info(job_getchannel(job))['id']
+    let job_id = ch_info(job_getchannel(job))['id']
+    let s:job_id_map[job_id] = job
+    return job_id
+  endfunction
+
+  function! clap#job#inject_job_id(job_id, job) abort
+    let s:job_id_map[a:job_id] = a:job
   endfunction
 endif
 
