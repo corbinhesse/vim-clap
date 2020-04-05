@@ -30,20 +30,6 @@ impl<T: Copy> Insert<T> for [T; ITEMS_TO_SHOW] {
     }
 }
 
-/// Combine json and println macro.
-///
-/// Neovim needs Content-length info when using stdio-based communication.
-macro_rules! print_json_with_length {
-  ( $( $field:expr ),+ ) => {
-    {
-      let msg = serde_json::json!({ $(stringify!($field): $field,)* });
-      if let Ok(s) = serde_json::to_string(&msg) {
-          println!("Content-length: {}\n\n{}", s.len(), s);
-      }
-    }
-  }
-}
-
 /// This macro is a special thing for [`dyn_collect_all`] and [`dyn_collect_number`].
 macro_rules! insert_both {
             // This macro pushes all things into buffer, pops one worst item from each top queue

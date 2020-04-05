@@ -13,6 +13,22 @@ function! s:handle_message(msg) abort
   call clap#state#handle_message(a:msg)
 endfunction
 
+function! s:handle_dyn_grep_message(msg) abort
+  if !g:clap.display.win_is_valid()
+        \ || g:clap.input.get() !=# s:last_query
+    return
+  endif
+
+  let decoded = json_decode(a:msg)
+
+  if has_key(decoded, 'using_cache')
+    call clap#forerunner#process_cache_info(decoded)
+    return
+  endif
+
+  call clap#state#handle_decoded_message(decoded)
+endfunction
+
 function! clap#filter#async#dyn#start_directly(maple_cmd) abort
   let s:last_query = g:clap.input.get()
   call clap#job#stdio#start_service(function('s:handle_message'), a:maple_cmd)
@@ -32,7 +48,19 @@ function! clap#filter#async#dyn#start_grep() abort
         \ clap#rooter#working_dir(),
         \ )
   let maple_cmd = clap#maple#build_cmd(grep_cmd)
-  call clap#job#stdio#start_service(function('s:handle_message'), maple_cmd)
+  unsilent echom 'maple_cmd:'.maple_cmd
+  call clap#job#stdio#start_service(function('s:handle_dyn_grep_message'), maple_cmd)
+endfunction
+
+function! clap#filter#async#dyn#grep_from_tempfile(tempfile) abort
+  let s:last_query = g:clap.input.get()
+  let grep_cmd = printf('%s --number 100 --winwidth %d grep "" "%s" --input "%s"',
+        \ g:clap_enable_icon ? '--enable-icon' : '',
+        \ winwidth(g:clap.display.winid),
+        \ g:clap.input.get(),
+        \ a:tempfile
+        \ )
+  call clap#job#stdio#start_service(function('s:handle_message'), clap#maple#build_cmd(grep_cmd))
 endfunction
 
 function! clap#filter#async#dyn#from_tempfile(tempfile) abort

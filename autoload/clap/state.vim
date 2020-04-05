@@ -30,22 +30,25 @@ endfunction
 
 function! clap#state#handle_message(msg) abort
   let decoded = json_decode(a:msg)
+  call clap#state#handle_decoded_message(decoded)
+endfunction
 
-  if has_key(decoded, 'total')
-    call clap#state#refresh_bare_matches_count(string(decoded.total))
+function! clap#state#handle_decoded_message(decoded) abort
+  if has_key(a:decoded, 'total')
+    call clap#state#refresh_bare_matches_count(string(a:decoded.total))
   endif
 
-  if has_key(decoded, 'lines')
-    call g:clap.display.set_lines(decoded.lines)
+  if has_key(a:decoded, 'lines')
+    call g:clap.display.set_lines(a:decoded.lines)
   endif
 
-  if has_key(decoded, 'truncated_map')
-    let g:__clap_lines_truncated_map = decoded.truncated_map
+  if has_key(a:decoded, 'truncated_map')
+    let g:__clap_lines_truncated_map = a:decoded.truncated_map
   endif
 
-  if has_key(decoded, 'indices')
+  if has_key(a:decoded, 'indices')
     try
-      call clap#highlight#add_fuzzy_async(decoded.indices)
+      call clap#highlight#add_fuzzy_async(a:decoded.indices)
     catch
       return
     endtry

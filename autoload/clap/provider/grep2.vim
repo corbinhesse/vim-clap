@@ -8,11 +8,10 @@ let s:grep2 = {}
 
 function! s:grep2.on_typed()
   if exists('g:__clap_forerunner_tempfile')
-    unsilent echom '[impl]'.g:__clap_forerunner_tempfile
-    call clap#filter#async#dyn#from_tempfile(g:__clap_forerunner_tempfile)
-    return
+    call clap#filter#async#dyn#grep_from_tempfile(g:__clap_forerunner_tempfile)
+  else
+    call clap#filter#async#dyn#start_grep()
   endif
-  call clap#filter#async#dyn#start_grep()
 endfunction
 
 function! s:grep2.init() abort

@@ -93,6 +93,7 @@ fn run(maple: Maple) -> Result<()> {
             glob,
             cmd_dir,
             sync,
+            input,
         } => {
             let g = match &glob {
                 Some(s) => Some(s.as_str()),
@@ -112,6 +113,7 @@ fn run(maple: Maple) -> Result<()> {
                 maple_cli::cmd::grep::dyn_grep(
                     &grep_query,
                     cmd_dir,
+                    input,
                     maple.number,
                     maple.enable_icon,
                 )?;

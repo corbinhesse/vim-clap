@@ -44,7 +44,7 @@ if has('nvim')
       try
         call s:MessageHandler(trim(s:round_message))
       catch
-        call clap#helper#echo_error('Failed to handle message:'.v:exception)
+        call clap#helper#echo_error('Failed to handle message:'.v:exception.', '.v:throwpoint)
       finally
         let s:round_message = ''
       endtry
