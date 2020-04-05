@@ -32,7 +32,6 @@ function! clap#filter#async#dyn#start_grep() abort
         \ clap#rooter#working_dir(),
         \ )
   let maple_cmd = clap#maple#build_cmd(grep_cmd)
-  echom "maple_cmd:".maple_cmd
   call clap#job#stdio#start_service(function('s:handle_message'), maple_cmd)
 endfunction
 
