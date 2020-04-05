@@ -58,10 +58,7 @@ if has('nvim')
       if a:event ==# 'stdout'
         call s:handle_stdout(a:data)
       elseif a:event ==# 'stderr'
-        if a:data == ['']
-          return
-        endif
-        call clap#helper#echo_error('on_event:'.string(a:data))
+        " Ignore stderr
       endif
     endif
   endfunction

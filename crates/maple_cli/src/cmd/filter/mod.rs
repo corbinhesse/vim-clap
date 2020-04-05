@@ -8,7 +8,7 @@ use std::path::Path;
 use anyhow::Result;
 use fuzzy_filter::{fuzzy_filter_and_rank, truncate_long_matched_lines, Algo, Source};
 
-use icon::prepend_icon;
+use icon::{prepend_icon, ICON_LEN};
 
 /// Returns the info of the truncated top items ranked by the filtering score.
 fn process_top_items<T>(
@@ -24,7 +24,7 @@ fn process_top_items<T>(
     if enable_icon {
         for (text, _, idxs) in truncated_lines {
             lines.push(add_icon(&text));
-            indices.push(idxs);
+            indices.push(idxs.into_iter().map(|x| x + ICON_LEN).collect());
         }
     } else {
         for (text, _, idxs) in truncated_lines {

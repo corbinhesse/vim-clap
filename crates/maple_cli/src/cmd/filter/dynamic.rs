@@ -142,10 +142,11 @@ fn try_notify_top_results(
             let mut lines = Vec::with_capacity(top_results_len);
             for &idx in top_results.iter() {
                 let (text, _, idxs) = std::ops::Index::index(buffer, idx);
-                indices.push(idxs);
                 let text = if enable_icon {
+                    indices.push(idxs.into_iter().map(|x| x + ICON_LEN).collect::<Vec<_>>());
                     add_icon(&text)
                 } else {
+                    indices.push(idxs.clone());
                     text.clone()
                 };
                 lines.push(text);
