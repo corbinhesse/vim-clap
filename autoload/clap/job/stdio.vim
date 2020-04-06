@@ -106,7 +106,7 @@ else
           \ })
     let s:job_channel = job_getchannel(s:job)
     let s:job_id = clap#job#get_vim8_job_id(s:job)
-    call clap#job#inject_job_id(s:job_id, s:job)
+    call clap#job#track(s:job_id, s:job)
   endfunction
 
   function! clap#job#stdio#send_message(msg) abort

@@ -22,12 +22,11 @@ else
   let s:job_id_map = {}
 
   function! clap#job#stop(job_id) abort
-    if !has_key(s:job_id_map, a:job_id)
-      return
+    " Ignore the invalid job_id
+    if has_key(s:job_id_map, a:job_id)
+      " Kill it!
+      call job_stop(remove(s:job_id_map, a:job_id), 'kill')
     endif
-    let job = remove(s:job_id_map, a:job_id)
-    " Kill it!
-    call job_stop(job, 'kill')
   endfunction
 
   function! clap#job#vim8_job_id_of(channel) abort
@@ -60,7 +59,7 @@ else
     return job_id
   endfunction
 
-  function! clap#job#inject_job_id(job_id, job) abort
+  function! clap#job#track(job_id, job) abort
     let s:job_id_map[a:job_id] = a:job
   endfunction
 endif
