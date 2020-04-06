@@ -4,12 +4,7 @@
 let s:save_cpo = &cpoptions
 set cpoptions&vim
 
-if has('python3') || has('python')
-  let s:has_python = v:true
-else
-  let s:has_python = v:false
-endif
-
+let s:has_python = has('python3') || has('python') ? v:true : v:false
 let s:can_use_python = v:false
 let s:has_py_dynamic_module = v:false
 
